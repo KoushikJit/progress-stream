@@ -1,0 +1,49 @@
+// components/ProgressButton.tsx
+"use client"
+import { useState } from "react";
+
+const ProgressButton = () => {
+  const [progress, setProgress] = useState<number | null>(null);
+
+  const handleClick = async () => {
+    try {
+      const response = await fetch("/api/pstd", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Failed to start process");
+      }
+      console.log(response);
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Invalid response");
+      }
+
+      const processStream = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          const data = new TextDecoder().decode(value);
+          console.log(data);
+          const obj = JSON.parse(data);
+        //   console.log(obj);
+          const { progress } = obj;
+          setProgress(progress);
+        }
+      };
+
+      await processStream();
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleClick}>Start Long Process</button>
+      {progress !== null && <p>Progress: {progress}%</p>}
+    </div>
+  );
+};
+
+export default ProgressButton;
